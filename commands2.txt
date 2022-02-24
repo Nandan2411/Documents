@@ -1,0 +1,82 @@
+Data flow-
+
+bq mk lab
+gsutil cp gs://cloud-training/gsp323/lab.csv .
+cat lab.csv
+gsutil cp gs://cloud-training/gsp323/lab.schema .
+cat lab.schema
+
+search buckets>cloud storage>create bucket>paste bucket name from qwiklab
+enforce public access
+select fine-grained
+create
+
+search bigquery>select 3 dots option>create dataset>add big query name from qwiklab(Dataset id)
+create dataset
+create table>select cloud storage(source)
+add gs://cloud-training/gsp323/lab.csv(from qwiklab)
+remove gs://
+table- customers(name)
+enable(edit as text)
+copy paste from terminal(result from cat lab.schema)
+
+search dataflow
+go to jobs
+create job
+job name- job-customers
+dataflow template- Text Files on Cloud Storage to BigQuery under "Process Data in Bulk (batch)"
+copy paste rest of the details from qwiklab main page
+run job
+
+
+
+Data Proc-
+
+Dataproc>create cluster
+update region as specified in qwiklab main page
+create
+click on cluster>vm instances>SSH
+copy paste hdfs dfs -cp gs://cloud-training/gsp323/data.txt /data.txt
+go to dataproc Jobs>create Job
+copy paste details from qwiklab
+submit
+
+
+
+Data Prep-
+
+go to Dataprep
+accept and agree,allow to all
+homepage>import data>select cloud storage
+copy paste gs://cloud-training/gsp323/runs.csv(from qwiklab)
+select pencil icon and paste the link and click 'go'
+in All Data select runs.csv
+click 'use in new flow'
+select column10>right click on "FAILURE"(Or SUCCESS see whats given in qwiklab)>select 'delete rows with selected values'
+select column9>click side arrow>filter rows>On column values>contains>paste pattern from qwiklab>add
+rename all columns(copy paste from qwiklab)
+click 'Run'
+again click 'Run'
+
+
+
+AI Task 
+
+search API and services>credentials>create credentials>api key
+
+export API_KEY=AIzaSyAWUBASK25Pb1RSgxhpF1xgROLGl_D00xY
+nano request.json
+
+{
+  "config": {
+      "encoding":"FLAC",
+      "languageCode": "en-US"
+  },
+  "audio": {
+      "uri":"gs://cloud-training/gsp323/task4.flac"
+  }
+}
+
+
+curl -s -X POST -H "Content-Type: application/json" --data-binary @request.json \ "https://speech.googleapis.com/v1/speech:recognize?key=${API_KEY}" > result.json
+gsutil cp result.json gs://qwiklabs-gcp-00-380583eeb4b1-marking/task4-gcs-479.result
