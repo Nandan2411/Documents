@@ -1,0 +1,108 @@
+Task 1
+
+gsutil cat gs://cloud-training/gsp318/marking/setup_marking_v2.sh | bash
+gcloud source repos clone valkyrie-app
+cd valkyrie-app
+cat > Dockerfile <<EOF
+FROM golang:1.10
+WORKDIR /go/src/app
+COPY source .
+RUN go install -v
+ENTRYPOINT ["app","-single=true","-port=8080"]
+EOF
+docker build -t <Docker Image>:<Tag Name> .
+cd ..
+cd marking
+./step1_v2.sh
+
+
+Task 2
+
+cd ~/valkyrie-app
+docker run -p 8080:8080 <Docker Image>:<Tag Name> &
+cd ..
+cd marking
+./step2_v2.sh
+
+
+Task 3
+
+cd ..
+cd valkyrie-app
+docker tag <Docker Image>:<Tag Name> gcr.io/$GOOGLE_CLOUD_PROJECT/<Docker Image>:<Tag Name>
+docker push gcr.io/$GOOGLE_CLOUD_PROJECT/<Docker Image>:<Tag Name>
+
+
+Task 4
+
+sed -i s#IMAGE_HERE#gcr.io/$GOOGLE_CLOUD_PROJECT/<Docker Image>:<Tag Name>#g k8s/deployment.yaml
+gcloud container clusters get-credentials valkyrie-dev --zone us-east1-d
+kubectl create -f k8s/deployment.yaml
+kubectl create -f k8s/service.yaml
+
+
+Task 5
+
+git merge origin/kurt-dev
+kubectl edit deployment valkyrie-dev
+### change replicas from 1 to <Replicas Count>
+### change <Tag Name> to <Updated Version> in two places
+docker build -t gcr.io/$GOOGLE_CLOUD_PROJECT/<Docker Image>:<Updated Version> .
+docker push gcr.io/$GOOGLE_CLOUD_PROJECT/<Docker Image>:<Updated Version>
+
+
+Task6
+
+Run coomand
+
+docker ps
+### get container id
+docker kill <container_id>
+
+export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/component=jenkins-master" -l "app.kubernetes.io/instance=cd" -o jsonpath="{.items[0].metadata.name}")
+kubectl port-forward $POD_NAME 8080:8080 >> /dev/null &
+printf $(kubectl get secret cd-jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode);echo
+
+
+# Open web-preview and login as admin with password from last command
+
+# Click on "Manage Jenkins", then click on "Manage Credentials"
+
+# Click on "Jenkins" in "Stores scopes to Jenkins", then click on "Global credentials(unrestricted)"
+
+# Click on "Add Credentials" from the left menu.
+
+# Select "Google Service Account from metadata" from kind and click on "OK".
+
+# Click Jenkins (top left), then click new item and enter "valkyrie-app"
+
+# Click on pipeline and Select "pipeline script from SCM" in Definition and set SCM to Git
+
+# Add the source code repo ( find it using command: gcloud source repos list)
+
+# Set credentials to qwiklabs-...
+
+# Click save.
+
+# Change color
+
+sed -i "s/green/orange/g" source/html.go
+
+# Update project in Jenkinsfile
+
+sed -i "s/YOUR_PROJECT/$GOOGLE_CLOUD_PROJECT/g" Jenkinsfile
+
+git config --global user.email "you@example.com"
+
+git config --global user.name "student"
+
+git add .
+
+git commit -m "build pipeline init"
+
+git push
+
+# in jenkins click build now on the job
+
+# initial build takes a while, just wait
+
